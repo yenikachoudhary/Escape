@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ESCAPE - 2D Stealth Project</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <section class="hero" id="hero">
+        <div class="hero-box">
+            <h1>ESCAPE</h1>
+            <p>Run out of the Prison with you companion.</p>
+            <button id="startBtn" onclick="startGame()">START INFILTRATION</button>
+            <div class="status" id="status">SYSTEM: STANDBY</div>
+        </div>
+    </section>
+
+    <main class="game" id="game">
+        <div class="top-bar">
+            <h2>ESCAPE</h2>
+            <h3>LEVEL 01</h3>
+            <div class="objective" id="objective">OBJECTIVE: Secure chemical smoke bomb immediately.</div>
+        </div>
+
+        <div class="canvas-wrap">
+            <canvas id="canvas"></canvas>
+        </div>
+    </main>
+
+    <script src="script.js"></script>
+</body>
+</html>
