@@ -13,13 +13,13 @@ body {
     overflow: hidden;
 }
 
-/* Hero / Welcome */
 .hero {
     position: absolute;
-    top: 0; left: 0;
+    top: 0;
+    left: 0;
     width: 100%;
     height: 100%;
-    background-image: linear-gradient(rgba(0,0,0,0.2), rgba(0,0,0,0.8)), url('assets/background.png');
+    background-image: linear-gradient(rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.8)), url('assets/background.png');
     background-size: cover;
     background-position: center;
     display: flex;
@@ -37,14 +37,14 @@ body {
     max-width: 600px;
     width: 90%;
     text-align: center;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,94,0,0.2) inset;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 94, 0, 0.2) inset;
 }
 
 .hero-box h1 {
     font-size: 64px;
     letter-spacing: 6px;
     margin-bottom: 15px;
-    text-shadow: 0 0 25px rgba(255,94,0,0.5);
+    text-shadow: 0 0 25px rgba(255, 94, 0, 0.5);
 }
 
 .hero-box p {
@@ -63,14 +63,14 @@ body {
     letter-spacing: 2px;
     border-radius: 30px;
     cursor: pointer;
-    box-shadow: 0 0 15px rgba(255, 94, 0, 0.6), 0 6px 20px rgba(0,0,0,0.4);
+    box-shadow: 0 0 15px rgba(255, 94, 0, 0.6), 0 6px 20px rgba(0, 0, 0, 0.4);
     animation: pulseGlow 2s infinite;
     transition: 0.2s;
 }
 
 #startBtn:hover {
     transform: scale(1.06);
-    box-shadow: 0 0 30px rgba(255, 94, 0, 1), 0 8px 25px rgba(0,0,0,0.5);
+    box-shadow: 0 0 30px rgba(255, 94, 0, 1), 0 8px 25px rgba(0, 0, 0, 0.5);
 }
 
 #startBtn:active {
@@ -86,9 +86,17 @@ body {
 }
 
 @keyframes pulseGlow {
-    0% { box-shadow: 0 0 15px rgba(255, 94, 0, 0.6), 0 6px 20px rgba(0,0,0,0.4); }
-    50% { box-shadow: 0 0 32px rgba(255, 94, 0, 0.95), 0 6px 20px rgba(0,0,0,0.4); }
-    100% { box-shadow: 0 0 15px rgba(255, 94, 0, 0.6), 0 6px 20px rgba(0,0,0,0.4); }
+    0% {
+        box-shadow: 0 0 15px rgba(255, 94, 0, 0.6), 0 6px 20px rgba(0, 0, 0, 0.4);
+    }
+
+    50% {
+        box-shadow: 0 0 32px rgba(255, 94, 0, 0.95), 0 6px 20px rgba(0, 0, 0, 0.4);
+    }
+
+    100% {
+        box-shadow: 0 0 15px rgba(255, 94, 0, 0.6), 0 6px 20px rgba(0, 0, 0, 0.4);
+    }
 }
 
 .hero.hide {
@@ -97,7 +105,6 @@ body {
     pointer-events: none;
 }
 
-/* Game Area */
 .game {
     width: 100%;
     height: 100%;
@@ -148,8 +155,142 @@ body {
 #canvas {
     width: 100%;
     max-width: 1100px;
-    aspect-ratio: 16 / 9;
+    aspect-ratio: 5/3;
     background: black;
     border: 2px solid #2f3542;
     border-radius: 8px;
+    image-rendering: pixelated;
+}
+
+.briefing {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: radial-gradient(circle at center, #17131d 0%, #09080c 70%, #050507 100%);
+    color: #ffffff;
+    font-family: monospace;
+}
+
+.briefing.show {
+    display: flex;
+}
+
+.briefing-box {
+    width: min(720px, 85%);
+    max-height: 88vh;
+    overflow-y: auto;
+    padding: 42px;
+    border: 1px solid #39ff14;
+    background: rgba(10, 10, 14, 0.96);
+    box-shadow: 0 0 30px rgba(57, 255, 20, 0.12);
+}
+
+.briefing-label {
+    color: #39ff14;
+    font-size: 13px;
+    letter-spacing: 3px;
+    margin-bottom: 14px;
+}
+
+.briefing-box h1 {
+    margin: 0;
+    font-size: 42px;
+    letter-spacing: 5px;
+}
+
+.briefing-line {
+    width: 100%;
+    height: 1px;
+    margin: 22px 0 28px;
+    background: #39ff14;
+    opacity: 0.5;
+}
+
+.briefing-box h2 {
+    margin: 22px 0 10px;
+    color: #39ff14;
+    font-size: 15px;
+    letter-spacing: 2px;
+}
+
+.briefing-box p {
+    margin: 0;
+    color: #cccccc;
+    font-size: 16px;
+    line-height: 1.6;
+}
+
+.controls {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 12px;
+}
+
+.controls div {
+    padding: 12px;
+    border: 1px solid #333;
+    background: #111116;
+}
+
+.controls span {
+    display: block;
+    color: #39ff14;
+    font-weight: bold;
+    font-size: 15px;
+    margin-bottom: 5px;
+}
+
+.controls label {
+    color: #888;
+    font-size: 11px;
+    letter-spacing: 1px;
+}
+
+.briefing-box ol {
+    margin-top: 10px;
+    padding-left: 24px;
+    color: #cccccc;
+    line-height: 1.9;
+}
+
+.briefing-box li {
+    padding-left: 5px;
+}
+
+#beginMissionBtn {
+    display: block;
+    width: 100%;
+    margin-top: 30px;
+    padding: 16px;
+    border: none;
+    background: #39ff14;
+    color: #080808;
+    font-family: monospace;
+    font-size: 16px;
+    font-weight: bold;
+    letter-spacing: 2px;
+    cursor: pointer;
+}
+
+#beginMissionBtn:hover {
+    background: #ffffff;
+    box-shadow: 0 0 20px rgba(57, 255, 20, 0.4);
+}
+
+@media (max-width:600px) {
+    .briefing-box {
+        padding: 25px;
+    }
+
+    .briefing-box h1 {
+        font-size: 28px;
+    }
+
+    .controls {
+        grid-template-columns: 1fr;
+    }
 }

@@ -1,11 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ESCAPE - 2D Stealth Project</title>
+    <link rel="icon" href="assets/favicon.png">
     <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
 
     <section class="hero" id="hero">
@@ -17,18 +20,50 @@
         </div>
     </section>
 
+    <section class="briefing" id="briefing">
+        <div class="briefing-box">
+            <div class="briefing-label">LEVEL 01</div>
+            <h1>MISSION BRIEFING</h1>
+            <div class="briefing-line"></div>
+            <h2>OBJECTIVE</h2>
+            <p>Infiltrate the prison and escape without being caught.</p>
+            <h2>CONTROLS</h2>
+            <div class="controls">
+                <div><span>W A S D</span><label>MOVE</label></div>
+                <div><span>ARROW KEYS</span><label>MOVE</label></div>
+                <div><span>E</span><label>INTERACT / PICK UP</label></div>
+                <div><span>Q</span><label>ACTIVATE SMOKE BOMB</label></div>
+            </div>
+            <h2>MISSION</h2>
+            <ol>
+                <li>Find the smoke bomb.</li>
+                <li>Use it to disable the guards.</li>
+                <li>Find the prison key.</li>
+                <li>Reach the locked gate.</li>
+            </ol>
+            <button id="beginMissionBtn">START MISSION</button>
+        </div>
+    </section>
+
     <main class="game" id="game">
         <div class="top-bar">
             <h2>ESCAPE</h2>
             <h3>LEVEL 01</h3>
             <div class="objective" id="objective">OBJECTIVE: Secure chemical smoke bomb immediately.</div>
         </div>
-
         <div class="canvas-wrap">
             <canvas id="canvas"></canvas>
         </div>
     </main>
 
+
+    <script src="js/input.js"></script>
+    <script src="js/map.js"></script>
+    <script src="js/camera.js"></script>
+    <script src="js/player.js"></script>
+    <script src="js/guard.js"></script>
+    <script src="js/game.js"></script>
     <script src="script.js"></script>
+
 </body>
 </html>
