@@ -169,13 +169,11 @@ function createGuard(game, x, y) {
         }
 
         if (guard.image && guard.image.complete && guard.image.naturalWidth > 0) {
-            // Shadow under guard feet
             ctx.fillStyle = "rgba(0, 0, 0, 0.35)";
             ctx.beginPath();
             ctx.ellipse(centerX, guard.y + guard.height - 2, 14, 5.5, 0, 0, Math.PI * 2);
             ctx.fill();
 
-            // Row 0 is idle (4 frames), Row 1 is walk (8 frames)
             const row = guard.stunned ? 0 : 1;
             const maxFrames = guard.stunned ? 4 : 8;
             const animSpeed = guard.stunned ? 3 : 8;

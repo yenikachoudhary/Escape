@@ -13,6 +13,8 @@ function createPlayer(game) {
         speed: 180,
         hasSmoke: false,
         hasKey: false,
+        hasPass: false,
+        chemicals: 0,
         facing: "down",
         isMoving: false,
         animTimer: 0,
@@ -65,7 +67,7 @@ function createPlayer(game) {
 
         if (!player.hasSmoke && !game.map.bomb.collected) {
             const distance = Math.hypot(player.centerX - (game.map.bomb.x + 24), player.centerY - (game.map.bomb.y + 24));
-            if (distance < 55 && game.input.isDown("e")) {
+            if (distance < 55 && game.input.consume("e")) {
                 player.hasSmoke = true;
                 game.map.bomb.collected = true;
                 if (typeof game.onBombCollected === "function") game.onBombCollected();
@@ -74,14 +76,14 @@ function createPlayer(game) {
         }
         if (!player.hasKey && !game.map.key.collected) {
             const distance = Math.hypot(player.centerX - (game.map.key.x + 24), player.centerY - (game.map.key.y + 24));
-            if (distance < 55 && game.input.isDown("e")) {
+            if (distance < 55 && game.input.consume("e")) {
                 player.hasKey = true;
                 game.map.key.collected = true;
                 if (typeof game.onKeyCollected === "function") game.onKeyCollected();
                 console.log("ITEM: Key collected");
             }
         }
-        if (player.hasSmoke && game.input.isDown("q")) {
+        if (player.hasSmoke && game.input.consume("q")) {
             game.guards.forEach(function (guard) { guard.stun(); });
             if (typeof game.triggerSmoke === "function") {
                 game.triggerSmoke(player.centerX, player.centerY);
@@ -96,7 +98,7 @@ function createPlayer(game) {
             const gateCenterX = game.map.gate.x + game.map.gate.width / 2;
             const gateCenterY = game.map.gate.y + game.map.gate.height / 2;
             const distance = Math.hypot(player.centerX - gateCenterX, player.centerY - gateCenterY);
-            if (distance < 75) {
+            if (distance < 75 && game.input.consume("e")) {
                 game.map.gate.open = true;
                 if (typeof game.onGateOpened === "function") game.onGateOpened();
                 console.log("GATE: Gate opened");
@@ -114,18 +116,17 @@ function createPlayer(game) {
 
     player.draw = function (ctx) {
         if (player.image && player.image.complete && player.image.naturalWidth > 0) {
-            // Shadow under feet
             ctx.fillStyle = "rgba(0, 0, 0, 0.35)";
             ctx.beginPath();
             ctx.ellipse(player.centerX, player.y + player.height - 2, 11, 4.5, 0, 0, Math.PI * 2);
             ctx.fill();
 
-            let rowIndex = 0; // "down"
+            let rowIndex = 0;
             if (player.facing === "right") rowIndex = 1;
             else if (player.facing === "up") rowIndex = 2;
             else if (player.facing === "left") rowIndex = 3;
 
-            let colIndex = 1; // Neutral standing frame
+            let colIndex = 1;
             if (player.isMoving) {
                 colIndex = Math.floor(player.animTimer * 7) % 4;
             }
