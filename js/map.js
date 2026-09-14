@@ -8,9 +8,9 @@ function createMap() {
         image: new Image(),
         loaded: false,
         collision: [],
-        bomb: { x: 496 * 3, y: 370 * 3, collected: false },
-        key: { x: 769 * 3, y: 240 * 3, collected: false },
-        gate: { x: 1024 * 3, y: 415 * 3, width: 90, height: 48, open: false }
+        bomb: { x: 496 * 3, y: (370 - 16) * 3, width: 48, height: 48, collected: false },
+        key: { x: 769 * 3, y: (240 - 16) * 3, width: 48, height: 48, collected: false },
+        gate: { x: 1024.5 * 3, y: (415.125 - 16) * 3, width: 32.5 * 3, height: 48, open: false }
     };
 
     for (let y = 0; y < map.rows; y++) {
@@ -30,14 +30,54 @@ function createMap() {
        .then(response => response.json())
        .then(data => {
             const wallLayer = data.layers.find(layer => layer.name === "walls");
-            if (!wallLayer) return;
-            for (let y = 0; y < map.rows; y++) {
-                for (let x = 0; x < map.columns; x++) {
-                    const index = y * map.columns + x;
-                    map.collision[y][x] = wallLayer.data[index] > 0? 1 : 0;
+            if (wallLayer) {
+                for (let y = 0; y < map.rows; y++) {
+                    for (let x = 0; x < map.columns; x++) {
+                        const index = y * map.columns + x;
+                        map.collision[y][x] = wallLayer.data[index] > 0 ? 1 : 0;
+                    }
                 }
+                console.log("MAP: Collision loaded");
             }
-            console.log("MAP: Collision loaded");
+
+            const entityLayer = data.layers.find(layer => layer.name === "entities" || layer.type === "objectgroup");
+            if (entityLayer && entityLayer.objects) {
+                const scale = 3;
+                let gateLeft = null;
+                let gateRight = null;
+
+                entityLayer.objects.forEach(obj => {
+                    const objY = (obj.gid ? (obj.y - obj.height) : obj.y) * scale;
+                    const objX = obj.x * scale;
+                    const objW = obj.width * scale;
+                    const objH = obj.height * scale;
+
+                    if (obj.name === "bomb" || obj.id === 1) {
+                        map.bomb.x = objX;
+                        map.bomb.y = objY;
+                        map.bomb.width = objW;
+                        map.bomb.height = objH;
+                    } else if (obj.name === "key" || obj.id === 5) {
+                        map.key.x = objX;
+                        map.key.y = objY;
+                        map.key.width = objW;
+                        map.key.height = objH;
+                    } else if (obj.name === "gate_l" || obj.id === 7) {
+                        gateLeft = { x: objX, y: objY, width: objW, height: objH };
+                    } else if (obj.name === "gate_r" || obj.id === 6) {
+                        gateRight = { x: objX, y: objY, width: objW, height: objH };
+                    }
+                });
+
+                if (gateLeft && gateRight) {
+                    map.gate.x = Math.min(gateLeft.x, gateRight.x);
+                    map.gate.y = Math.min(gateLeft.y, gateRight.y);
+                    const rightEdge = Math.max(gateLeft.x + gateLeft.width, gateRight.x + gateRight.width);
+                    map.gate.width = rightEdge - map.gate.x;
+                    map.gate.height = Math.max(gateLeft.height, gateRight.height);
+                }
+                console.log("MAP: Tiled entities loaded successfully", { bomb: map.bomb, key: map.key, gate: map.gate });
+            }
         });
 
     map.draw = function (ctx) {
@@ -48,45 +88,150 @@ function createMap() {
             ctx.drawImage(map.image, 0, 0, map.width, map.height);
         }
 
+        // Draw smoke bomb if not collected
         if (!map.bomb.collected) {
-            ctx.fillStyle = "#ff8c00";
+            const bx = map.bomb.x;
+            const by = map.bomb.y;
+
+            // Soft shadow under canister
+            ctx.fillStyle = "rgba(0, 0, 0, 0.4)";
             ctx.beginPath();
-            ctx.arc(map.bomb.x + 24, map.bomb.y + 24, 12, 0, Math.PI * 2);
+            ctx.ellipse(bx + 24, by + 40, 14, 5, 0, 0, Math.PI * 2);
             ctx.fill();
-            ctx.fillStyle = "#ffffff";
-            ctx.font = "bold 12px monospace";
-            ctx.fillText("E", map.bomb.x + 20, map.bomb.y + 28);
+
+            // Canister body (dark charcoal)
+            ctx.fillStyle = "#242a34";
+            ctx.fillRect(bx + 14, by + 14, 20, 24);
+
+            // Specular metallic highlight
+            ctx.fillStyle = "#4a5568";
+            ctx.fillRect(bx + 16, by + 14, 4, 24);
+
+            // High-visibility hazard orange warning band
+            ctx.fillStyle = "#ff6a00";
+            ctx.fillRect(bx + 14, by + 22, 20, 8);
+
+            // Hazard stripe markers
+            ctx.fillStyle = "#111111";
+            ctx.fillRect(bx + 17, by + 24, 3, 4);
+            ctx.fillRect(bx + 23, by + 24, 3, 4);
+            ctx.fillRect(bx + 29, by + 24, 3, 4);
+
+            // Top valve / cap
+            ctx.fillStyle = "#15191e";
+            ctx.fillRect(bx + 19, by + 9, 10, 5);
+
+            // Ring pull / safety lever
+            ctx.strokeStyle = "#cbd5e1";
+            ctx.lineWidth = 2;
+            ctx.strokeRect(bx + 26, by + 7, 5, 7);
+
+            // Label badge above
+            ctx.fillStyle = "rgba(0, 0, 0, 0.75)";
+            ctx.fillRect(bx + 8, by - 4, 32, 11);
+            ctx.strokeStyle = "#ff6a00";
+            ctx.lineWidth = 1;
+            ctx.strokeRect(bx + 8, by - 4, 32, 11);
+            ctx.fillStyle = "#ff8c00";
+            ctx.font = "bold 8px monospace";
+            ctx.textAlign = "center";
+            ctx.fillText("SMOKE", bx + 24, by + 4);
+            ctx.textAlign = "left";
         }
 
+        // Draw key if not collected
         if (!map.key.collected) {
-            const keyX = map.key.x + 24;
-            const keyY = map.key.y + 24;
+            const kx = map.key.x;
+            const ky = map.key.y;
+            const keyCenterX = kx + 24;
+            const keyCenterY = ky + 24;
 
-            ctx.strokeStyle = "#ffd700";
-            ctx.lineWidth = 5;
+            // Soft shadow under key
+            ctx.fillStyle = "rgba(0, 0, 0, 0.4)";
             ctx.beginPath();
-            ctx.arc(keyX, keyY, 9, 0, Math.PI * 2);
+            ctx.ellipse(keyCenterX, keyCenterY + 14, 16, 5, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Golden Key Ring Head
+            ctx.strokeStyle = "#ffd700";
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.arc(keyCenterX - 8, keyCenterY, 8, 0, Math.PI * 2);
             ctx.stroke();
 
+            // Golden Key Shaft
             ctx.fillStyle = "#ffd700";
-            ctx.fillRect(keyX + 7, keyY - 3, 22, 6);
-            ctx.fillRect(keyX + 20, keyY + 3, 5, 7);
-            ctx.fillRect(keyX + 26, keyY + 3, 5, 7);
+            ctx.fillRect(keyCenterX, keyCenterY - 3, 20, 6);
 
+            // Golden Key Teeth
+            ctx.fillRect(keyCenterX + 10, keyCenterY + 3, 4, 7);
+            ctx.fillRect(keyCenterX + 16, keyCenterY + 3, 4, 7);
+
+            // Metallic shine / glint
             ctx.fillStyle = "#ffffff";
-            ctx.font = "bold 12px monospace";
-            ctx.fillText("KEY", keyX - 12, keyY + 30);
+            ctx.fillRect(keyCenterX - 11, keyCenterY - 4, 3, 3);
+            ctx.fillRect(keyCenterX + 2, keyCenterY - 2, 8, 2);
+
+            // Label badge above
+            ctx.fillStyle = "rgba(0, 0, 0, 0.75)";
+            ctx.fillRect(keyCenterX - 16, ky - 4, 32, 11);
+            ctx.strokeStyle = "#ffd700";
+            ctx.lineWidth = 1;
+            ctx.strokeRect(keyCenterX - 16, ky - 4, 32, 11);
+            ctx.fillStyle = "#ffd700";
+            ctx.font = "bold 8px monospace";
+            ctx.textAlign = "center";
+            ctx.fillText("KEY", keyCenterX, ky + 4);
+            ctx.textAlign = "left";
         }
 
+        // Draw locked gate if not open
         if (!map.gate.open) {
-            ctx.fillStyle = "#111111";
-            ctx.fillRect(map.gate.x, map.gate.y, map.gate.width, map.gate.height);
-            ctx.strokeStyle = "#ff3b3b";
-            ctx.lineWidth = 5;
-            ctx.strokeRect(map.gate.x, map.gate.y, map.gate.width, map.gate.height);
-            ctx.fillStyle = "#ff3b3b";
-            ctx.font = "bold 12px monospace";
-            ctx.fillText("LOCKED", map.gate.x + 18, map.gate.y + 29);
+            const gx = map.gate.x;
+            const gy = map.gate.y;
+            const gw = map.gate.width;
+            const gh = map.gate.height;
+            const gCenterX = gx + gw / 2;
+            const gCenterY = gy + gh / 2;
+
+            // Dark doorway recess
+            ctx.fillStyle = "#0a0b0e";
+            ctx.fillRect(gx, gy, gw, gh);
+
+            // Heavy iron vertical bars
+            const barSpacing = 14;
+            const barCount = Math.floor(gw / barSpacing);
+            for (let i = 1; i <= barCount; i++) {
+                const barX = gx + i * (gw / (barCount + 1)) - 2;
+                ctx.fillStyle = "#333842";
+                ctx.fillRect(barX, gy, 5, gh);
+                ctx.fillStyle = "#64748b";
+                ctx.fillRect(barX + 1, gy, 2, gh);
+            }
+
+            // Top and bottom crossbars
+            ctx.fillStyle = "#1e2229";
+            ctx.fillRect(gx, gy + 8, gw, 6);
+            ctx.fillRect(gx, gy + gh - 14, gw, 6);
+            ctx.fillStyle = "#475569";
+            ctx.fillRect(gx, gy + 8, gw, 1);
+            ctx.fillRect(gx, gy + gh - 14, gw, 1);
+
+            // Red padlock in center
+            ctx.fillStyle = "#b91c1c";
+            ctx.fillRect(gCenterX - 14, gCenterY - 8, 28, 18);
+            ctx.strokeStyle = "#94a3b8";
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.arc(gCenterX, gCenterY - 8, 8, Math.PI, 0);
+            ctx.stroke();
+
+            // Padlock keyhole & label
+            ctx.fillStyle = "#ffffff";
+            ctx.font = "bold 9px monospace";
+            ctx.textAlign = "center";
+            ctx.fillText("LOCKED", gCenterX, gCenterY + 4);
+            ctx.textAlign = "left";
         }
     };
 

@@ -58,17 +58,19 @@ function createPlayer(game) {
 
         if (!player.hasSmoke && !game.map.bomb.collected) {
             const distance = Math.hypot(player.centerX - (game.map.bomb.x + 24), player.centerY - (game.map.bomb.y + 24));
-            if (distance < 45 && game.input.isDown("e")) {
+            if (distance < 55 && game.input.isDown("e")) {
                 player.hasSmoke = true;
                 game.map.bomb.collected = true;
+                if (typeof game.onBombCollected === "function") game.onBombCollected();
                 console.log("ITEM: Smoke bomb collected");
             }
         }
         if (!player.hasKey && !game.map.key.collected) {
             const distance = Math.hypot(player.centerX - (game.map.key.x + 24), player.centerY - (game.map.key.y + 24));
-            if (distance < 45 && game.input.isDown("e")) {
+            if (distance < 55 && game.input.isDown("e")) {
                 player.hasKey = true;
                 game.map.key.collected = true;
+                if (typeof game.onKeyCollected === "function") game.onKeyCollected();
                 console.log("ITEM: Key collected");
             }
         }
@@ -77,6 +79,9 @@ function createPlayer(game) {
             if (typeof game.triggerSmoke === "function") {
                 game.triggerSmoke(player.centerX, player.centerY);
             }
+            if (typeof game.onSmokeUsed === "function") {
+                game.onSmokeUsed();
+            }
             player.hasSmoke = false;
             console.log("SMOKE: ALL GUARDS STUNNED");
         }
@@ -84,8 +89,9 @@ function createPlayer(game) {
             const gateCenterX = game.map.gate.x + game.map.gate.width / 2;
             const gateCenterY = game.map.gate.y + game.map.gate.height / 2;
             const distance = Math.hypot(player.centerX - gateCenterX, player.centerY - gateCenterY);
-            if (distance < 70) {
+            if (distance < 75) {
                 game.map.gate.open = true;
+                if (typeof game.onGateOpened === "function") game.onGateOpened();
                 console.log("GATE: Gate opened");
             }
         }
