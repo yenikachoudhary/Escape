@@ -4,6 +4,7 @@ let levelComplete = false;
 function createGame(canvas) {
     console.log("GAME: Starting initialization");
     const ctx = canvas.getContext("2d");
+    ctx.imageSmoothingEnabled = false;
 
     game = {
         canvas: canvas,
@@ -13,9 +14,45 @@ function createGame(canvas) {
         player: null,
         guards: [],
         camera: null,
+        smokeParticles: [],
         lastTime: 0,
         running: true,
         caught: false
+    };
+
+    game.triggerSmoke = function (x, y) {
+        const particleCount = 45;
+        const colors = [
+            "rgba(240, 245, 250, {A})",
+            "rgba(215, 225, 235, {A})",
+            "rgba(180, 195, 210, {A})",
+            "rgba(150, 165, 180, {A})",
+            "rgba(120, 135, 150, {A})"
+        ];
+
+        for (let i = 0; i < particleCount; i++) {
+            const angle = Math.random() * Math.PI * 2;
+            const speed = 25 + Math.random() * 85;
+            const initialRadius = 8 + Math.random() * 8;
+            const targetRadius = 20 + Math.random() * 18;
+            const maxLife = 2.5 + Math.random() * 1.5;
+
+            game.smokeParticles.push({
+                x: x + (Math.random() - 0.5) * 16,
+                y: y + (Math.random() - 0.5) * 16,
+                vx: Math.cos(angle) * speed,
+                vy: Math.sin(angle) * speed,
+                driftX: (Math.random() - 0.5) * 15,
+                driftY: -5 - Math.random() * 12,
+                initialRadius: initialRadius,
+                targetRadius: targetRadius,
+                currentRadius: initialRadius,
+                life: 0,
+                maxLife: maxLife,
+                baseAlpha: 0.65 + Math.random() * 0.25,
+                color: colors[Math.floor(Math.random() * colors.length)]
+            });
+        }
     };
 
     canvas.width = 960;
@@ -73,6 +110,25 @@ function updateGame(delta) {
         }
     });
 
+    if (game.smokeParticles && game.smokeParticles.length > 0) {
+        for (let i = game.smokeParticles.length - 1; i >= 0; i--) {
+            const p = game.smokeParticles[i];
+            p.life += delta;
+            if (p.life >= p.maxLife) {
+                game.smokeParticles.splice(i, 1);
+                continue;
+            }
+            p.x += p.vx * delta;
+            p.y += p.vy * delta;
+            p.vx *= Math.pow(0.82, delta * 60);
+            p.vy *= Math.pow(0.82, delta * 60);
+            p.x += p.driftX * delta;
+            p.y += p.driftY * delta;
+            const progress = p.life / p.maxLife;
+            p.currentRadius = p.initialRadius + (p.targetRadius - p.initialRadius) * Math.sin(progress * Math.PI * 0.5);
+        }
+    }
+
     game.camera.update(game.player);
 
     if (game.map.gate.open) {
@@ -83,11 +139,27 @@ function updateGame(delta) {
 
 function drawGame() {
     const ctx = game.ctx;
+    ctx.imageSmoothingEnabled = false;
     ctx.clearRect(0, 0, game.canvas.width, game.canvas.height);
     ctx.save();
     ctx.translate(-game.camera.x, -game.camera.y);
 
     game.map.draw(ctx);
+
+    if (game.smokeParticles && game.smokeParticles.length > 0) {
+        ctx.save();
+        for (let i = 0; i < game.smokeParticles.length; i++) {
+            const p = game.smokeParticles[i];
+            const progress = p.life / p.maxLife;
+            const alpha = p.baseAlpha * Math.max(0, 1 - progress);
+            ctx.fillStyle = p.color.replace("{A}", alpha.toFixed(3));
+            ctx.beginPath();
+            ctx.arc(Math.round(p.x), Math.round(p.y), Math.round(p.currentRadius), 0, Math.PI * 2);
+            ctx.fill();
+        }
+        ctx.restore();
+    }
+
     game.guards.forEach(function (guard) { guard.draw(ctx); });
     game.player.draw(ctx);
     ctx.restore();
@@ -165,6 +237,10 @@ function restartGame() {
     game.caught = false;
     game.running = true;
     game.map.gate.open = false;
+
+    if (game.smokeParticles) {
+        game.smokeParticles = [];
+    }
 
     game.player = createPlayer(game);
     game.guards = [

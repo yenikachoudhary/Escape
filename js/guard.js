@@ -1,3 +1,6 @@
+const guardSpriteImage = new Image();
+guardSpriteImage.src = "assets/guard_sprites.png";
+
 function createGuard(game, x, y) {
     const guard = {
         x: x - 15,
@@ -12,7 +15,10 @@ function createGuard(game, x, y) {
         visionAngle: Math.PI / 2,
         stunned: false,
         stunTimer: 0,
-        caughtPlayer: false
+        caughtPlayer: false,
+        facing: "right",
+        animTimer: 0,
+        image: guardSpriteImage
     };
 
     guard.chooseDirection = function () {
@@ -26,10 +32,16 @@ function createGuard(game, x, y) {
         guard.directionX = direction.x;
         guard.directionY = direction.y;
         guard.directionTimer = 1.5 + Math.random() * 2.5;
+
+        if (guard.directionX > 0) guard.facing = "right";
+        else if (guard.directionX < 0) guard.facing = "left";
+        else if (guard.directionY > 0) guard.facing = "down";
+        else if (guard.directionY < 0) guard.facing = "up";
     };
 
     guard.update = function (delta) {
         if (guard.stunned) {
+            guard.animTimer += delta;
             guard.stunTimer -= delta;
             if (guard.stunTimer <= 0) {
                 guard.stunned = false;
@@ -42,6 +54,8 @@ function createGuard(game, x, y) {
         if (guard.caughtPlayer) {
             return;
         }
+
+        guard.animTimer += delta;
 
         guard.directionTimer -= delta;
         if (guard.directionTimer <= 0) {
@@ -149,20 +163,51 @@ function createGuard(game, x, y) {
             ctx.restore();
         }
 
-        ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
-        ctx.fillRect(guard.x + 4, guard.y + 5, guard.width, guard.height);
+        if (guard.image && guard.image.complete && guard.image.naturalWidth > 0) {
+            // Shadow under guard feet
+            ctx.fillStyle = "rgba(0, 0, 0, 0.35)";
+            ctx.beginPath();
+            ctx.ellipse(centerX, guard.y + guard.height - 2, 14, 5.5, 0, 0, Math.PI * 2);
+            ctx.fill();
 
-        ctx.fillStyle = "#ff3b3b";
-        ctx.fillRect(guard.x, guard.y, guard.width, guard.height);
+            // Row 0 is idle (4 frames), Row 1 is walk (8 frames)
+            const row = guard.stunned ? 0 : 1;
+            const maxFrames = guard.stunned ? 4 : 8;
+            const animSpeed = guard.stunned ? 3 : 8;
+            const col = Math.floor(guard.animTimer * animSpeed) % maxFrames;
 
-        ctx.fillStyle = "#111";
-        ctx.fillRect(guard.x + 5, guard.y + 6, 20, 7);
+            const frameWidth = 96;
+            const frameHeight = 96;
+            const sx = col * frameWidth;
+            const sy = row * frameHeight;
+
+            const drawX = Math.round(centerX - 48);
+            const drawY = Math.round(guard.y + guard.height - 74);
+
+            ctx.save();
+            if (guard.facing === "left") {
+                ctx.translate(centerX, 0);
+                ctx.scale(-1, 1);
+                ctx.translate(-centerX, 0);
+            }
+            ctx.drawImage(guard.image, sx, sy, frameWidth, frameHeight, drawX, drawY, frameWidth, frameHeight);
+            ctx.restore();
+        } else {
+            ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
+            ctx.fillRect(guard.x + 4, guard.y + 5, guard.width, guard.height);
+
+            ctx.fillStyle = "#ff3b3b";
+            ctx.fillRect(guard.x, guard.y, guard.width, guard.height);
+
+            ctx.fillStyle = "#111";
+            ctx.fillRect(guard.x + 5, guard.y + 6, 20, 7);
+        }
 
         if (guard.stunned) {
             ctx.fillStyle = "#ffffff";
             ctx.font = "bold 20px monospace";
             ctx.textAlign = "center";
-            ctx.fillText("ZZZ", centerX, guard.y - 10);
+            ctx.fillText("ZZZ", centerX, guard.y - 12);
             ctx.textAlign = "left";
         }
     };

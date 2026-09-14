@@ -1,6 +1,21 @@
+const playerSpriteImage = new Image();
+playerSpriteImage.src = "assets/player_sprite.png";
+
 function createPlayer(game) {
     const start = game.map.gridToCenter(3, 3);
-    const player = { x: start.x - 15, y: start.y - 15, width: 30, height: 30, speed: 180, hasSmoke: false, hasKey: false };
+    const player = {
+        x: start.x - 15,
+        y: start.y - 15,
+        width: 30,
+        height: 30,
+        speed: 180,
+        hasSmoke: false,
+        hasKey: false,
+        facing: "down",
+        isMoving: false,
+        animTimer: 0,
+        image: playerSpriteImage
+    };
 
     player.update = function (delta) {
         let dx = 0;
@@ -11,10 +26,30 @@ function createPlayer(game) {
         if (game.input.isDown("d") || game.input.isDown("arrowright")) dx += 1;
 
         if (dx !== 0 || dy !== 0) {
+            player.isMoving = true;
+            player.animTimer += delta;
+
+            if (dy < 0 && (player.facing === "up" || dx === 0)) {
+                player.facing = "up";
+            } else if (dy > 0 && (player.facing === "down" || dx === 0)) {
+                player.facing = "down";
+            } else if (dx < 0) {
+                player.facing = "left";
+            } else if (dx > 0) {
+                player.facing = "right";
+            } else if (dy < 0) {
+                player.facing = "up";
+            } else if (dy > 0) {
+                player.facing = "down";
+            }
+
             const length = Math.sqrt(dx * dx + dy * dy);
             dx /= length;
             dy /= length;
+        } else {
+            player.isMoving = false;
         }
+
         const moveX = dx * player.speed * delta;
         const moveY = dy * player.speed * delta;
 
@@ -39,6 +74,9 @@ function createPlayer(game) {
         }
         if (player.hasSmoke && game.input.isDown("q")) {
             game.guards.forEach(function (guard) { guard.stun(); });
+            if (typeof game.triggerSmoke === "function") {
+                game.triggerSmoke(player.centerX, player.centerY);
+            }
             player.hasSmoke = false;
             console.log("SMOKE: ALL GUARDS STUNNED");
         }
@@ -62,9 +100,42 @@ function createPlayer(game) {
     };
 
     player.draw = function (ctx) {
-        ctx.fillStyle = "rgba(0,0,0,0.5"; ctx.fillRect(player.x + 4, player.y + 5, player.width, player.height);
-        ctx.fillStyle = "#39ff14"; ctx.fillRect(player.x, player.y, player.width, player.height);
-        ctx.fillStyle = "#111"; ctx.fillRect(player.x + 5, player.y + 6, 20, 7);
+        if (player.image && player.image.complete && player.image.naturalWidth > 0) {
+            // Shadow under feet
+            ctx.fillStyle = "rgba(0, 0, 0, 0.35)";
+            ctx.beginPath();
+            ctx.ellipse(player.centerX, player.y + player.height - 2, 11, 4.5, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            let rowIndex = 0; // "down"
+            if (player.facing === "right") rowIndex = 1;
+            else if (player.facing === "up") rowIndex = 2;
+            else if (player.facing === "left") rowIndex = 3;
+
+            let colIndex = 1; // Neutral standing frame
+            if (player.isMoving) {
+                colIndex = Math.floor(player.animTimer * 7) % 4;
+            }
+
+            const frameWidth = 16;
+            const frameHeight = 24;
+            const sx = colIndex * frameWidth;
+            const sy = rowIndex * frameHeight;
+
+            const drawWidth = 32;
+            const drawHeight = 48;
+            const drawX = Math.round(player.x + (player.width - drawWidth) / 2);
+            const drawY = Math.round(player.y + player.height - drawHeight);
+
+            ctx.drawImage(player.image, sx, sy, frameWidth, frameHeight, drawX, drawY, drawWidth, drawHeight);
+        } else {
+            ctx.fillStyle = "rgba(0,0,0,0.5)";
+            ctx.fillRect(player.x + 4, player.y + 5, player.width, player.height);
+            ctx.fillStyle = "#39ff14";
+            ctx.fillRect(player.x, player.y, player.width, player.height);
+            ctx.fillStyle = "#111";
+            ctx.fillRect(player.x + 5, player.y + 6, 20, 7);
+        }
     };
 
     Object.defineProperty(player, "centerX", { get: function () { return player.x + player.width / 2; } });
