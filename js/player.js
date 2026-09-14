@@ -2,7 +2,9 @@ const playerSpriteImage = new Image();
 playerSpriteImage.src = "assets/player_sprite.png";
 
 function createPlayer(game) {
-    const start = game.map.gridToCenter(3, 3);
+    const start = game.currentLevel === 2 && game.map.playerStart
+        ? game.map.playerStart
+        : game.map.gridToCenter(3, 3);
     const player = {
         x: start.x - 15,
         y: start.y - 15,
@@ -55,6 +57,11 @@ function createPlayer(game) {
 
         if (!player.collides(player.x + moveX, player.y)) player.x += moveX;
         if (!player.collides(player.x, player.y + moveY)) player.y += moveY;
+
+        if (game.currentLevel === 2) {
+            game.updateLevelTwoPlayer(player);
+            return;
+        }
 
         if (!player.hasSmoke && !game.map.bomb.collected) {
             const distance = Math.hypot(player.centerX - (game.map.bomb.x + 24), player.centerY - (game.map.bomb.y + 24));

@@ -251,3 +251,62 @@ function createMap() {
 
     return map;
 }
+
+function createLevelTwoMap() {
+    const map = {
+        tileSize: 48, columns: 50, rows: 30, width: 2400, height: 1440,
+        image: new Image(), loaded: false, collision: [],
+        playerStart: { x: 1079, y: 175 },
+        securityPass: { x: 191, y: 864, width: 48, height: 48, collected: false },
+        chemicals: [], securityGates: [], finalExit: [], terminal: null,
+        securityOpen: false, exitOpen: false
+    };
+    for (let y = 0; y < map.rows; y++) map.collision[y] = Array(map.columns).fill(0);
+    map.image.onload = function () { map.loaded = true; };
+    map.image.src = "assets/map2.png";
+    map.entity = function (obj) {
+        const scale = 3;
+        return { x: obj.x * scale, y: (obj.gid ? obj.y - obj.height : obj.y) * scale, width: (obj.width || 16) * scale, height: (obj.height || 16) * scale };
+    };
+    map.setCollisionRect = function (rect, value) {
+        const left = Math.max(0, Math.floor(rect.x / map.tileSize));
+        const right = Math.min(map.columns - 1, Math.floor((rect.x + rect.width - 1) / map.tileSize));
+        const top = Math.max(0, Math.floor(rect.y / map.tileSize));
+        const bottom = Math.min(map.rows - 1, Math.floor((rect.y + rect.height - 1) / map.tileSize));
+        for (let y = top; y <= bottom; y++) for (let x = left; x <= right; x++) map.collision[y][x] = value ? 1 : 0;
+    };
+    map.ready = fetch("assets/map2.tmj").then(function (response) { return response.json(); }).then(function (data) {
+        map.columns = data.width; map.rows = data.height; map.tileSize = data.tilewidth * 3;
+        map.width = map.columns * map.tileSize; map.height = map.rows * map.tileSize;
+        const walls = data.layers.find(function (layer) { return layer.name === "walls"; });
+        if (walls) for (let y = 0; y < map.rows; y++) for (let x = 0; x < map.columns; x++) map.collision[y][x] = walls.data[y * map.columns + x] > 0 ? 1 : 0;
+        const entities = data.layers.find(function (layer) { return layer.name === "entities" || layer.type === "objectgroup"; });
+        if (!entities || !entities.objects) return;
+        entities.objects.forEach(function (obj) {
+            const entity = map.entity(obj);
+            if (obj.name === "player_start") map.playerStart = { x: obj.x * 3, y: obj.y * 3 };
+            else if (obj.name === "security_pass" || obj.name === "access_key") map.securityPass = Object.assign(entity, { collected: false });
+            else if (/^chemical_0[1-4]$/.test(obj.name) || /^bottle_[1-4]$/.test(obj.name)) map.chemicals.push(Object.assign(entity, { collected: false }));
+            else if (obj.name === "security_exit_u" || obj.name === "security_exit_l" || obj.name === "security_gate_u" || obj.name === "security_gate_l") map.securityGates.push(entity);
+            else if (obj.name === "exit_r" || obj.name === "exit_l" || obj.name === "exit_gate_r" || obj.name === "exit_gate_l") map.finalExit.push(entity);
+            else if (obj.name === "control_terminal") map.terminal = entity;
+        });
+    });
+    map.isWall = function (column, row) { return column < 0 || row < 0 || column >= map.columns || row >= map.rows || map.collision[row][column] === 1; };
+    map.gridToCenter = function (column, row) { return { x: column * map.tileSize + map.tileSize / 2, y: row * map.tileSize + map.tileSize / 2 }; };
+    map.drawMarker = function (ctx, entity, color, label) {
+        const x = entity.x + entity.width / 2, y = entity.y + entity.height / 2;
+        ctx.fillStyle = "rgba(0,0,0,.65)"; ctx.fillRect(x - 25, y - 31, 50, 14);
+        ctx.strokeStyle = color; ctx.strokeRect(x - 25, y - 31, 50, 14);
+        ctx.fillStyle = color; ctx.font = "bold 8px monospace"; ctx.textAlign = "center"; ctx.fillText(label, x, y - 21); ctx.textAlign = "left";
+    };
+    map.draw = function (ctx) {
+        ctx.fillStyle = "#10151d"; ctx.fillRect(0, 0, map.width, map.height);
+        if (map.loaded) ctx.drawImage(map.image, 0, 0, map.width, map.height);
+        if (!map.securityPass.collected) { map.drawMarker(ctx, map.securityPass, "#59d8ff", "PASS"); ctx.fillStyle = "#59d8ff"; ctx.fillRect(map.securityPass.x + 18, map.securityPass.y + 18, 12, 18); }
+        map.chemicals.forEach(function (chemical) { if (!chemical.collected) { map.drawMarker(ctx, chemical, "#d68cff", "CHEM"); ctx.fillStyle = "#d68cff"; ctx.fillRect(chemical.x + 18, chemical.y + 15, 12, 22); } });
+        if (!map.securityOpen) map.securityGates.forEach(function (gate) { ctx.fillStyle = "rgba(220,45,45,.82)"; ctx.fillRect(gate.x, gate.y, gate.width, gate.height); });
+        if (!map.exitOpen) map.finalExit.forEach(function (gate) { ctx.fillStyle = "rgba(220,45,45,.82)"; ctx.fillRect(gate.x, gate.y, gate.width, gate.height); });
+    };
+    return map;
+}

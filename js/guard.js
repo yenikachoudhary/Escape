@@ -40,6 +40,11 @@ function createGuard(game, x, y) {
     };
 
     guard.update = function (delta) {
+        if (guard.permanentlyDisabled) {
+            guard.stunned = true;
+            guard.animTimer += delta;
+            return;
+        }
         if (guard.stunned) {
             guard.animTimer += delta;
             guard.stunTimer -= delta;
@@ -99,7 +104,7 @@ function createGuard(game, x, y) {
     };
 
     guard.canSeePlayer = function () {
-        if (guard.stunned) {
+        if (guard.stunned || guard.permanentlyDisabled) {
             return false;
         }
 
