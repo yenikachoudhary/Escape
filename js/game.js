@@ -388,3 +388,30 @@ window.addEventListener("click", function (event) {
 function restartGame() {
     createGame(document.getElementById("canvas"), game.currentLevel);
 }
+
+window.addEventListener("keydown", function (event) {
+    if (!game || !game.running) return;
+    if (event.key.toLowerCase() !== "t") return;
+    if (!game.map) return;
+    game.map.theme = !game.map.theme;
+
+    if (game.map.theme) {
+        game.showBanner(
+            "ALTERNATE THEME ENABLED",
+            2,
+            "success"
+        );
+        console.log("THEME: Alternate theme enabled");
+
+    } else {
+
+        game.showBanner(
+            "NORMAL THEME ENABLED",
+            2,
+            "info"
+        );
+
+        console.log("THEME: Normal theme enabled");
+    }
+
+});

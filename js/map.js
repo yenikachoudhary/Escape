@@ -6,7 +6,10 @@ function createMap() {
         width: 70 * 48,
         height: 40 * 48,
         image: new Image(),
+        themeImage: new Image(),
         loaded: false,
+        themeLoaded: false,
+        theme: false,
         collision: [],
         bomb: { x: 496 * 3, y: (370 - 16) * 3, width: 48, height: 48, collected: false },
         key: { x: 769 * 3, y: (240 - 16) * 3, width: 48, height: 48, collected: false },
@@ -22,13 +25,20 @@ function createMap() {
 
     map.image.onload = function () {
         map.loaded = true;
-        console.log("MAP: PNG loaded");
+        console.log("MAP: Normal theme loaded");
     };
+
+    map.themeImage.onload = function () {
+        map.themeLoaded = true;
+        console.log("MAP: Alternate theme loaded");
+    };
+
     map.image.src = "assets/map1.png";
+    map.themeImage.src = "assets/map 1_theme.png";
 
     fetch("assets/map1.tmj")
-       .then(response => response.json())
-       .then(data => {
+        .then(response => response.json())
+        .then(data => {
             const wallLayer = data.layers.find(layer => layer.name === "walls");
             if (wallLayer) {
                 for (let y = 0; y < map.rows; y++) {
@@ -84,8 +94,22 @@ function createMap() {
         ctx.fillStyle = "#241c2b";
         ctx.fillRect(0, 0, map.width, map.height);
 
-        if (map.loaded) {
-            ctx.drawImage(map.image, 0, 0, map.width, map.height);
+        if (map.theme && map.themeLoaded) {
+            ctx.drawImage(
+                map.themeImage,
+                0,
+                0,
+                map.width,
+                map.height
+            );
+        } else if (map.loaded) {
+            ctx.drawImage(
+                map.image,
+                0,
+                0,
+                map.width,
+                map.height
+            );
         }
 
         if (!map.bomb.collected) {
@@ -238,9 +262,12 @@ function createLevelTwoMap() {
         width: 2400,
         height: 1440,
         image: new Image(),
+        themeImage: new Image(),
         tileImage: new Image(),
         loaded: false,
+        themeLoaded: false,
         tilesLoaded: false,
+        theme: false,
         collision: [],
         playerStart: { x: 1079, y: 175 },
         securityPass: null,
@@ -258,8 +285,18 @@ function createLevelTwoMap() {
 
     map.image.onload = function () {
         map.loaded = true;
+        console.log("MAP 2: Normal theme loaded");
     };
+
+    map.themeImage.onload = function () {
+        map.themeLoaded = true;
+
+        console.log("MAP 2: Alternate theme loaded");
+    };
+
     map.image.src = "assets/map2.png";
+    map.themeImage.src = "assets/map2_theme.png";
+
     map.tileImage.onload = function () {
         map.tilesLoaded = true;
     };
@@ -367,9 +404,31 @@ function createLevelTwoMap() {
     };
 
     map.draw = function (ctx) {
+
         ctx.fillStyle = "#10151d";
         ctx.fillRect(0, 0, map.width, map.height);
-        if (map.loaded) ctx.drawImage(map.image, 0, 0, map.width, map.height);
+
+        if (map.theme && map.themeLoaded) {
+
+            ctx.drawImage(
+                map.themeImage,
+                0,
+                0,
+                map.width,
+                map.height
+            );
+
+        } else if (map.loaded) {
+
+            ctx.drawImage(
+                map.image,
+                0,
+                0,
+                map.width,
+                map.height
+            );
+
+        }
         if (map.securityPass && !map.securityPass.collected) map.drawTileEntity(ctx, map.securityPass);
         map.chemicals.forEach(function (chemical) {
             if (!chemical.collected) map.drawTileEntity(ctx, chemical);
